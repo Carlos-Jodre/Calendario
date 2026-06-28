@@ -1,0 +1,13 @@
+// firestore.rules
+// Pega esto en Firebase Console > Firestore > Rules
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /eventos/{eventoId} {
+      allow read, write: if true; // Abierto para uso familiar
+      // Para mayor seguridad, puedes restringir a usuarios autenticados:
+      // allow read, write: if request.auth != null;
+    }
+  }
+}
