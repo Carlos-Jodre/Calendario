@@ -28,6 +28,15 @@ function groupByDate(events) {
     if (!groups[ev.fecha]) groups[ev.fecha] = [];
     groups[ev.fecha].push(ev);
   });
+  // Sort events within each day: no-time first, then by hora ascending
+  Object.values(groups).forEach(evs => {
+    evs.sort((a, b) => {
+      if (!a.hora && !b.hora) return 0;
+      if (!a.hora) return -1;
+      if (!b.hora) return 1;
+      return a.hora.localeCompare(b.hora);
+    });
+  });
   return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
 }
 
