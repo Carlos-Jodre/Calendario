@@ -1,17 +1,8 @@
 import { useState, useEffect } from "react";
 import { initializeApp } from "firebase/app";
 import {
-  getFirestore,
-  collection,
-  onSnapshot,
-  addDoc,
-  deleteDoc,
-  updateDoc,
-  doc,
-  query,
-  orderBy,
-  setDoc,
-  getDoc,
+  getFirestore, collection, onSnapshot, addDoc,
+  deleteDoc, updateDoc, doc, query, orderBy, setDoc,
 } from "firebase/firestore";
 import CalendarView from "./components/CalendarView";
 import EventModal from "./components/EventModal";
@@ -39,9 +30,9 @@ export const DEFAULT_MEMBERS = [
 ];
 
 export const MEMBER_COLORS = [
-  "#5b8fb9", "#c77daa", "#6ab187", "#e8a838",
-  "#c8956c", "#7b68ee", "#e07b7b", "#4db6ac",
-  "#ff8a65", "#a1887f", "#78909c", "#66bb6a",
+  "#5b8fb9","#c77daa","#6ab187","#e8a838",
+  "#c8956c","#7b68ee","#e07b7b","#4db6ac",
+  "#ff8a65","#a1887f","#78909c","#66bb6a",
 ];
 
 export const CATEGORIES = [
@@ -63,23 +54,16 @@ export default function App() {
   const [showModal, setShowModal] = useState(false);
   const [showMembers, setShowMembers] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
-  const [view, setView] = useState("month");
   const [loading, setLoading] = useState(true);
 
-  // Load members from Firestore (single doc in "config" collection)
   useEffect(() => {
     const unsub = onSnapshot(doc(db, "config", "miembros"), (snap) => {
-      if (snap.exists()) {
-        setMembers(snap.data().lista || DEFAULT_MEMBERS);
-      } else {
-        // First time: seed defaults
-        setDoc(doc(db, "config", "miembros"), { lista: DEFAULT_MEMBERS });
-      }
+      if (snap.exists()) setMembers(snap.data().lista || DEFAULT_MEMBERS);
+      else setDoc(doc(db, "config", "miembros"), { lista: DEFAULT_MEMBERS });
     });
     return unsub;
   }, []);
 
-  // Load events
   useEffect(() => {
     const q = query(collection(db, "eventos"), orderBy("fecha", "asc"));
     const unsub = onSnapshot(q, (snapshot) => {
@@ -102,19 +86,14 @@ export default function App() {
   };
 
   const handleSaveEvent = async (eventData) => {
-    if (editingEvent) {
-      await updateDoc(doc(db, "eventos", editingEvent.id), eventData);
-    } else {
-      await addDoc(collection(db, "eventos"), eventData);
-    }
+    if (editingEvent) await updateDoc(doc(db, "eventos", editingEvent.id), eventData);
+    else await addDoc(collection(db, "eventos"), eventData);
     setShowModal(false);
     setEditingEvent(null);
   };
 
   const handleDeleteEvent = async (eventId) => {
-    if (confirm("¿Eliminar este evento?")) {
-      await deleteDoc(doc(db, "eventos", eventId));
-    }
+    if (confirm("¿Eliminar este evento?")) await deleteDoc(doc(db, "eventos", eventId));
   };
 
   const handleSaveMembers = async (newMembers) => {
@@ -127,8 +106,6 @@ export default function App() {
       <Header
         currentDate={currentDate}
         setCurrentDate={setCurrentDate}
-        view={view}
-        setView={setView}
         members={members}
         onAddEvent={() => handleAddEvent(new Date().toISOString().split("T")[0])}
         onOpenMembers={() => setShowMembers(true)}
@@ -141,22 +118,20 @@ export default function App() {
         </div>
       ) : (
         <main className="main-content">
-          {view === "month" ? (
-            <CalendarView
-              currentDate={currentDate}
-              events={events}
-              members={members}
-              onDayClick={handleAddEvent}
-              onEventClick={handleEditEvent}
-            />
-          ) : (
-            <EventList
-              events={events}
-              members={members}
-              onEdit={handleEditEvent}
-              onDelete={handleDeleteEvent}
-            />
-          )}
+          <CalendarView
+            currentDate={currentDate}
+            events={events}
+            members={members}
+            onDayClick={handleAddEvent}
+            onEventClick={handleEditEvent}
+          />
+          <EventList
+            currentDate={currentDate}
+            events={events}
+            members={members}
+            onEdit={handleEditEvent}
+            onDelete={handleDeleteEvent}
+          />
         </main>
       )}
 
