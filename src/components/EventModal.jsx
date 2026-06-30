@@ -3,25 +3,18 @@ import { CATEGORIES } from "../App";
 
 export default function EventModal({ date, event, members, onSave, onClose, onDelete }) {
   const [form, setForm] = useState({
-    titulo: "",
-    fecha: date || new Date().toISOString().split("T")[0],
-    hora: "",
-    categoria: "otro",
-    miembro: "todos",
-    descripcion: "",
-    lugar: "",
+    titulo: "", fecha: date || new Date().toISOString().split("T")[0],
+    hora: "", horaFin: "", categoria: "otro", miembro: "todos",
+    descripcion: "", lugar: "",
   });
 
   useEffect(() => {
     if (event) {
       setForm({
-        titulo: event.titulo || "",
-        fecha: event.fecha || date,
-        hora: event.hora || "",
-        categoria: event.categoria || "otro",
-        miembro: event.miembro || "todos",
-        descripcion: event.descripcion || "",
-        lugar: event.lugar || "",
+        titulo: event.titulo || "", fecha: event.fecha || date,
+        hora: event.hora || "", horaFin: event.horaFin || "",
+        categoria: event.categoria || "otro", miembro: event.miembro || "todos",
+        descripcion: event.descripcion || "", lugar: event.lugar || "",
       });
     } else {
       setForm(f => ({ ...f, fecha: date || f.fecha }));
@@ -33,9 +26,10 @@ export default function EventModal({ date, event, members, onSave, onClose, onDe
   const handleSave = () => {
     if (!form.titulo.trim()) return alert("El título es obligatorio");
     if (!form.fecha) return alert("La fecha es obligatoria");
+    if (form.hora && form.horaFin && form.horaFin <= form.hora)
+      return alert("La hora de fin debe ser posterior a la hora de inicio");
     onSave({
-      ...form,
-      titulo: form.titulo.trim(),
+      ...form, titulo: form.titulo.trim(),
       createdAt: event?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });
@@ -50,33 +44,47 @@ export default function EventModal({ date, event, members, onSave, onClose, onDe
         </div>
 
         <div className="modal-body">
+          {/* Título */}
           <div className="form-group">
             <label className="form-label">Título *</label>
-            <input
-              className="form-input"
-              placeholder="Ej: Visita al médico, Cumpleaños..."
-              value={form.titulo}
-              onChange={e => set("titulo", e.target.value)}
-              autoFocus
-            />
+            <input className="form-input" placeholder="Ej: Visita al médico, Cumpleaños..." value={form.titulo} onChange={e => set("titulo", e.target.value)} autoFocus />
           </div>
 
+          {/* Fecha */}
+          <div className="form-group">
+            <label className="form-label">Fecha *</label>
+            <input type="date" className="form-input" value={form.fecha} onChange={e => set("fecha", e.target.value)} />
+          </div>
+
+          {/* Hora inicio y fin */}
           <div className="form-row">
             <div className="form-group">
-              <label className="form-label">Fecha *</label>
-              <input type="date" className="form-input" value={form.fecha} onChange={e => set("fecha", e.target.value)} />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Hora (opcional)</label>
+              <label className="form-label">Hora inicio</label>
               <input type="time" className="form-input" value={form.hora} onChange={e => set("hora", e.target.value)} />
             </div>
+            <div className="form-group">
+              <label className="form-label">Hora fin</label>
+              <input
+                type="time" className="form-input" value={form.horaFin}
+                onChange={e => set("horaFin", e.target.value)}
+                disabled={!form.hora}
+                style={{ opacity: form.hora ? 1 : 0.4 }}
+              />
+            </div>
           </div>
+          {!form.hora && (
+            <p style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginTop: -10, marginBottom: 14 }}>
+              Introduce la hora de inicio para poder añadir la hora de fin
+            </p>
+          )}
 
+          {/* Lugar */}
           <div className="form-group">
             <label className="form-label">Lugar (opcional)</label>
             <input className="form-input" placeholder="Ej: Hospital, Colegio, Casa..." value={form.lugar} onChange={e => set("lugar", e.target.value)} />
           </div>
 
+          {/* Categoría */}
           <div className="form-group">
             <label className="form-label">Categoría</label>
             <div className="cat-grid">
@@ -89,16 +97,16 @@ export default function EventModal({ date, event, members, onSave, onClose, onDe
             </div>
           </div>
 
+          {/* Miembro */}
           <div className="form-group">
             <label className="form-label">¿Para quién?</label>
             <div className="member-grid">
               {(members || []).map(m => (
                 <button
-                  key={m.id}
+                  key={m.id} type="button"
                   className={`member-chip ${form.miembro === m.id ? "selected" : ""}`}
                   style={form.miembro === m.id ? { background: m.color, borderColor: m.color, color: "#fff" } : {}}
                   onClick={() => set("miembro", m.id)}
-                  type="button"
                 >
                   <span className="member-dot" style={{ background: m.color }} />
                   {m.name}
@@ -107,6 +115,7 @@ export default function EventModal({ date, event, members, onSave, onClose, onDe
             </div>
           </div>
 
+          {/* Notas */}
           <div className="form-group">
             <label className="form-label">Notas (opcional)</label>
             <textarea className="form-textarea" placeholder="Información adicional..." value={form.descripcion} onChange={e => set("descripcion", e.target.value)} />
@@ -114,9 +123,7 @@ export default function EventModal({ date, event, members, onSave, onClose, onDe
         </div>
 
         <div className="modal-footer">
-          {onDelete && (
-            <button className="btn-delete" onClick={onDelete} type="button">🗑 Eliminar</button>
-          )}
+          {onDelete && <button className="btn-delete" onClick={onDelete} type="button">🗑 Eliminar</button>}
           <button className="btn-save" onClick={handleSave} type="button">
             {event ? "💾 Guardar cambios" : "✅ Añadir evento"}
           </button>
