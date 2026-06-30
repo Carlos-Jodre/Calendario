@@ -3,14 +3,12 @@ const MONTHS_ES = [
   "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"
 ];
 
-export default function Header({ currentDate, setCurrentDate, view, setView, members, onAddEvent, onOpenMembers }) {
+export default function Header({ currentDate, setCurrentDate, members, onAddEvent, onOpenMembers }) {
   const goMonth = (dir) => {
     const d = new Date(currentDate);
     d.setMonth(d.getMonth() + dir);
     setCurrentDate(d);
   };
-
-  const goToday = () => setCurrentDate(new Date());
 
   return (
     <header className="header">
@@ -24,39 +22,24 @@ export default function Header({ currentDate, setCurrentDate, view, setView, mem
         </div>
 
         <nav className="header-nav">
-          {view === "month" && (
-            <>
-              <div className="nav-arrows">
-                <button className="btn-icon" onClick={() => goMonth(-1)}>‹</button>
-                <span className="nav-month">
-                  {MONTHS_ES[currentDate.getMonth()]} {currentDate.getFullYear()}
-                </span>
-                <button className="btn-icon" onClick={() => goMonth(1)}>›</button>
-              </div>
-              <button className="btn-today" onClick={goToday}>Hoy</button>
-            </>
-          )}
-
-          <div className="view-toggle">
-            <button className={`view-btn ${view === "month" ? "active" : ""}`} onClick={() => setView("month")}>
-              🗓 Mes
-            </button>
-            <button className={`view-btn ${view === "list" ? "active" : ""}`} onClick={() => setView("list")}>
-              📋 Lista
-            </button>
+          <div className="nav-arrows">
+            <button className="btn-icon" onClick={() => goMonth(-1)}>‹</button>
+            <span className="nav-month">
+              {MONTHS_ES[currentDate.getMonth()]} {currentDate.getFullYear()}
+            </span>
+            <button className="btn-icon" onClick={() => goMonth(1)}>›</button>
           </div>
+
+          <button className="btn-today" onClick={() => setCurrentDate(new Date())}>Hoy</button>
 
           <button className="btn-icon" onClick={onOpenMembers} title="Gestionar miembros" style={{ fontSize: "1.1rem" }}>
             👥
           </button>
 
-          <button className="btn-add" onClick={onAddEvent}>
-            + Evento
-          </button>
+          <button className="btn-add" onClick={onAddEvent}>+ Evento</button>
         </nav>
       </div>
 
-      {/* Members legend */}
       <div className="calendar-legend">
         {(members || []).filter(m => m.id !== "todos").map(m => (
           <span key={m.id} className="legend-item">
@@ -64,13 +47,7 @@ export default function Header({ currentDate, setCurrentDate, view, setView, mem
             {m.name}
           </span>
         ))}
-        <span
-          className="legend-item legend-edit"
-          onClick={onOpenMembers}
-          title="Editar miembros"
-        >
-          ✏️ Editar
-        </span>
+        <span className="legend-item legend-edit" onClick={onOpenMembers}>✏️ Editar</span>
       </div>
     </header>
   );
