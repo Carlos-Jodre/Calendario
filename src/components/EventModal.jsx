@@ -9,22 +9,13 @@ const RECURRENCE_OPTIONS = [
   { id: "yearly",  label: "Cada año" },
 ];
 
-const REMINDER_OPTIONS = [
-  { id: "none", label: "Sin recordatorio" },
-  { id: "0",    label: "A la hora del evento" },
-  { id: "10",   label: "10 minutos antes" },
-  { id: "30",   label: "30 minutos antes" },
-  { id: "60",   label: "1 hora antes" },
-  { id: "1440", label: "1 día antes" },
-];
-
 export default function EventModal({ date, event, members, onSave, onClose, onDelete }) {
   const [form, setForm] = useState({
     titulo: "", fecha: date || new Date().toISOString().split("T")[0],
     fechaFin: "", hora: "", horaFin: "",
     categoria: "otro", miembro: "todos",
     descripcion: "", lugar: "",
-    recurrencia: "none", recordatorio: "none",
+    recurrencia: "none",
   });
 
   useEffect(() => {
@@ -36,7 +27,6 @@ export default function EventModal({ date, event, members, onSave, onClose, onDe
         categoria: event.categoria || "otro", miembro: event.miembro || "todos",
         descripcion: event.descripcion || "", lugar: event.lugar || "",
         recurrencia: event.recurrencia || "none",
-        recordatorio: event.recordatorio || "none",
       });
     } else {
       setForm(f => ({ ...f, fecha: date || f.fecha }));
@@ -52,8 +42,6 @@ export default function EventModal({ date, event, members, onSave, onClose, onDe
       return alert("La hora de fin debe ser posterior a la hora de inicio");
     if (form.fechaFin && form.fechaFin < form.fecha)
       return alert("La fecha de fin debe ser igual o posterior a la fecha de inicio");
-    if (form.recordatorio !== "none" && !form.hora)
-      return alert("Para añadir un recordatorio, indica primero la hora del evento");
 
     onSave({
       ...form, titulo: form.titulo.trim(),
@@ -129,24 +117,6 @@ export default function EventModal({ date, event, members, onSave, onClose, onDe
                 <option key={opt.id} value={opt.id}>{opt.label}</option>
               ))}
             </select>
-          </div>
-
-          {/* Recordatorio */}
-          <div className="form-group">
-            <label className="form-label">🔔 Recordatorio</label>
-            <select
-              className="form-select" value={form.recordatorio}
-              onChange={e => set("recordatorio", e.target.value)}
-              disabled={!form.hora}
-              style={{ opacity: form.hora ? 1 : 0.45 }}
-            >
-              {REMINDER_OPTIONS.map(opt => (
-                <option key={opt.id} value={opt.id}>{opt.label}</option>
-              ))}
-            </select>
-            {!form.hora && (
-              <p className="field-hint">Indica la hora del evento para poder programar un recordatorio</p>
-            )}
           </div>
 
           {/* Categoría */}
