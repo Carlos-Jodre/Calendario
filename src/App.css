@@ -258,20 +258,22 @@ body {
 .event-card-left {
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
-  min-width: 52px; flex-shrink: 0;
+  width: 56px; flex-shrink: 0;
 }
 .event-card-time-block {
   display: flex; flex-direction: column; align-items: center; gap: 1px;
+  width: 100%;
 }
 .event-time-start {
   font-size: 0.82rem; font-weight: 700; color: var(--text-main);
 }
 .event-time-end {
-  font-size: 0.72rem; color: var(--text-muted); font-weight: 600;
+  font-size: 0.7rem; color: var(--text-muted); font-weight: 600;
 }
 .event-time-allday {
-  font-size: 0.65rem; color: var(--text-muted); font-weight: 600;
-  text-transform: uppercase; letter-spacing: 0.3px;
+  font-size: 0.6rem; color: var(--text-muted); font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.2px;
+  text-align: center; line-height: 1.3;
 }
 
 .event-card-divider {
@@ -462,6 +464,6 @@ body {
   .day-dot { width: 5px; height: 5px; }
   .weekday-label { font-size: 0.6rem; padding: 7px 2px; }
   .form-row { grid-template-columns: 1fr 1fr; }
-  .event-card-left { min-width: 44px; }
+  .event-card-left { width: 46px; }
   .nav-month { min-width: 110px; font-size: 0.82rem; }
 }
