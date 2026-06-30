@@ -120,6 +120,7 @@ export default function App() {
         <main className="main-content">
           <CalendarView
             currentDate={currentDate}
+            setCurrentDate={setCurrentDate}
             events={events}
             members={members}
             onDayClick={handleAddEvent}
