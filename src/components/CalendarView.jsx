@@ -29,7 +29,7 @@ function isToday(cell) {
   return !cell.otherMonth && cell.day === t.getDate() && cell.month === t.getMonth() && cell.year === t.getFullYear();
 }
 
-export default function CalendarView({ currentDate, events, members, onDayClick, onEventClick }) {
+export default function CalendarView({ currentDate, setCurrentDate, events, members, onDayClick, onEventClick }) {
   const cells = getMonthDays(currentDate);
 
   const getMemberColor = (memberId) => {
@@ -42,6 +42,15 @@ export default function CalendarView({ currentDate, events, members, onDayClick,
     if (!eventsByDate[ev.fecha]) eventsByDate[ev.fecha] = [];
     eventsByDate[ev.fecha].push(ev);
   });
+
+  const handleDayClick = (cell, dateStr) => {
+    if (cell.otherMonth) {
+      // Navigate to that month instead of doing nothing
+      setCurrentDate(new Date(cell.year, cell.month, 1));
+    } else {
+      onDayClick(dateStr);
+    }
+  };
 
   return (
     <div className="calendar-wrap">
@@ -62,7 +71,7 @@ export default function CalendarView({ currentDate, events, members, onDayClick,
                 cell.otherMonth ? "other-month" : "",
                 today ? "today" : "",
               ].join(" ")}
-              onClick={() => !cell.otherMonth && onDayClick(dateStr)}
+              onClick={() => handleDayClick(cell, dateStr)}
             >
               <div className="day-number-wrap">
                 <span className={`day-number ${today ? "today-circle" : ""}`}>
@@ -71,14 +80,18 @@ export default function CalendarView({ currentDate, events, members, onDayClick,
               </div>
 
               {/* iPhone-style dots */}
-              {dayEvents.length > 0 && !cell.otherMonth && (
+              {dayEvents.length > 0 && (
                 <div className="day-dots">
                   {dayEvents.slice(0, 3).map((ev, idx) => (
                     <span
                       key={idx}
                       className="day-dot"
                       style={{ background: getMemberColor(ev.miembro) }}
-                      onClick={e => { e.stopPropagation(); onEventClick(ev); }}
+                      onClick={e => {
+                        e.stopPropagation();
+                        if (cell.otherMonth) setCurrentDate(new Date(cell.year, cell.month, 1));
+                        onEventClick(ev);
+                      }}
                     />
                   ))}
                   {dayEvents.length > 3 && (
