@@ -191,7 +191,7 @@ body {
   font-weight: 800;
 }
 
-.calendar-day.other-month .day-number { color: var(--text-muted); opacity: 0.5; }
+.calendar-day.other-month .day-number { color: var(--text-muted); opacity: 0.65; }
 
 /* iPhone-style dots */
 .day-dots {
