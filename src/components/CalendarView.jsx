@@ -37,11 +37,6 @@ export default function CalendarView({ currentDate, events, members, onDayClick,
     return m ? m.color : "#c8956c";
   };
 
-  const getCatIcon = (catId) => {
-    const c = CATEGORIES.find(c => c.id === catId);
-    return c ? c.icon : "📌";
-  };
-
   const eventsByDate = {};
   events.forEach(ev => {
     if (!eventsByDate[ev.fecha]) eventsByDate[ev.fecha] = [];
@@ -57,29 +52,40 @@ export default function CalendarView({ currentDate, events, members, onDayClick,
         {cells.map((cell, i) => {
           const dateStr = toDateStr(cell);
           const dayEvents = eventsByDate[dateStr] || [];
-          const visible = dayEvents.slice(0, 3);
-          const extra = dayEvents.length - 3;
+          const today = isToday(cell);
+
           return (
             <div
               key={i}
-              className={["calendar-day", cell.otherMonth ? "other-month" : "", isToday(cell) ? "today" : "", dayEvents.length > 0 ? "has-events" : ""].join(" ")}
+              className={[
+                "calendar-day",
+                cell.otherMonth ? "other-month" : "",
+                today ? "today" : "",
+              ].join(" ")}
               onClick={() => !cell.otherMonth && onDayClick(dateStr)}
             >
-              <div className="day-number">{cell.day}</div>
-              <div className="day-events">
-                {visible.map(ev => (
-                  <div
-                    key={ev.id}
-                    className="day-event-chip"
-                    style={{ background: getMemberColor(ev.miembro) }}
-                    onClick={e => { e.stopPropagation(); onEventClick(ev); }}
-                    title={`${getCatIcon(ev.categoria)} ${ev.titulo}${ev.hora ? " · " + ev.hora : ""}`}
-                  >
-                    {getCatIcon(ev.categoria)} {ev.titulo}
-                  </div>
-                ))}
-                {extra > 0 && <div className="day-more">+{extra} más</div>}
+              <div className="day-number-wrap">
+                <span className={`day-number ${today ? "today-circle" : ""}`}>
+                  {cell.day}
+                </span>
               </div>
+
+              {/* iPhone-style dots */}
+              {dayEvents.length > 0 && !cell.otherMonth && (
+                <div className="day-dots">
+                  {dayEvents.slice(0, 3).map((ev, idx) => (
+                    <span
+                      key={idx}
+                      className="day-dot"
+                      style={{ background: getMemberColor(ev.miembro) }}
+                      onClick={e => { e.stopPropagation(); onEventClick(ev); }}
+                    />
+                  ))}
+                  {dayEvents.length > 3 && (
+                    <span className="day-dot day-dot-more" />
+                  )}
+                </div>
+              )}
             </div>
           );
         })}
