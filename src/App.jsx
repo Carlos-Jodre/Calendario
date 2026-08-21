@@ -30,7 +30,6 @@ export const DEFAULT_MEMBERS = [
   { id: "m1",   name: "Carlos", color: "#5b8fb9" },
   { id: "m2",   name: "Pareja", color: "#c77daa" },
 ];
-
 export const MEMBER_COLORS = [
   "#5b8fb9","#c77daa","#6ab187","#e8a838",
   "#c8956c","#7b68ee","#e07b7b","#4db6ac",
