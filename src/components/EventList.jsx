@@ -4,7 +4,7 @@ import {
   getFirestore, collection, onSnapshot, addDoc,
   deleteDoc, updateDoc, doc, query, orderBy, setDoc,
 } from "firebase/firestore";
-import CalendarView from "./components/CalendarView";
+import { CATEGORIES } from "../App";
 import EventModal from "./components/EventModal";
 import EventList from "./components/EventList";
 import Header from "./components/Header";
