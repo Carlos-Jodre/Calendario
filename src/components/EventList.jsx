@@ -1,142 +1,210 @@
-import { CATEGORIES } from "../App";
+import { useState, useEffect } from "react";
+import { initializeApp } from "firebase/app";
+import {
+  getFirestore, collection, onSnapshot, addDoc,
+  deleteDoc, updateDoc, doc, query, orderBy, setDoc,
+} from "firebase/firestore";
+import CalendarView from "./components/CalendarView";
+import EventModal from "./components/EventModal";
+import EventList from "./components/EventList";
+import Header from "./components/Header";
+import MembersModal from "./components/MembersModal";
+import InstallBanner from "./components/InstallBanner";
+import DayPanel from "./components/DayPanel";
+import "./App.css";
 
-const MONTHS_ES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
-const DAYS_FULL = ["domingo","lunes","martes","miércoles","jueves","viernes","sábado"];
+const firebaseConfig = {
+  apiKey: "AIzaSyDfq4oVaFxhGaqipx52itBxUARcajJhHfA",
+  authDomain: "tareas-casa-11c7b.firebaseapp.com",
+  projectId: "tareas-casa-11c7b",
+  storageBucket: "tareas-casa-11c7b.firebasestorage.app",
+  messagingSenderId: "956111451974",
+  appId: "1:956111451974:web:aab85979e536d5770e1747",
+};
 
-function formatDateLabel(dateStr) {
-  const [y, m, d] = dateStr.split("-").map(Number);
-  const date = new Date(y, m - 1, d);
-  const today = new Date();
-  const tomorrow = new Date(); tomorrow.setDate(today.getDate() + 1);
-  const todayStr = today.toISOString().split("T")[0];
-  const tomorrowStr = tomorrow.toISOString().split("T")[0];
-  if (dateStr === todayStr) return "Hoy";
-  if (dateStr === tomorrowStr) return "Mañana";
-  const dayName = DAYS_FULL[date.getDay()];
-  return `${dayName.charAt(0).toUpperCase() + dayName.slice(1)}, ${d} de ${MONTHS_ES[m - 1]}`;
-}
+const app = initializeApp(firebaseConfig);
+export const db = getFirestore(app);
 
-function formatTime(hora, horaFin) {
-  if (!hora) return null;
-  if (horaFin) return `${hora} – ${horaFin}`;
-  return hora;
-}
+export const DEFAULT_MEMBERS = [
+  { id: "todos",  name: "Todos",  color: "#c8956c" },
+  { id: "m1",    name: "Carlos", color: "#5b8fb9" },
+  { id: "m2",    name: "Pareja", color: "#c77daa" },
+];
 
-function groupByDate(events) {
-  const groups = {};
-  events.forEach(ev => {
-    if (!groups[ev.fecha]) groups[ev.fecha] = [];
-    groups[ev.fecha].push(ev);
-  });
-  // Sort events within each day: no-time first, then by hora ascending
-  Object.values(groups).forEach(evs => {
-    evs.sort((a, b) => {
-      if (!a.hora && !b.hora) return 0;
-      if (!a.hora) return -1;
-      if (!b.hora) return 1;
-      return a.hora.localeCompare(b.hora);
+export const MEMBER_COLORS = [
+  "#5b8fb9","#c77daa","#6ab187","#e8a838",
+  "#c8956c","#7b68ee","#e07b7b","#4db6ac",
+  "#ff8a65","#a1887f","#78909c","#66bb6a",
+];
+
+export const CATEGORIES = [
+  { id: "reunion", label: "Reunión",  icon: "👥" },
+  { id: "medico",  label: "Médico",   icon: "🏥" },
+  { id: "colegio", label: "Colegio",  icon: "🎒" },
+  { id: "deporte", label: "Deporte",  icon: "⚽" },
+  { id: "ocio",    label: "Ocio",     icon: "🎉" },
+  { id: "viaje",   label: "Viaje",    icon: "✈️" },
+  { id: "trabajo", label: "Trabajo",  icon: "💼" },
+  { id: "otro",    label: "Otro",     icon: "📌" },
+];
+
+export default function App() {
+  const [events, setEvents] = useState([]);
+  const [members, setMembers] = useState(DEFAULT_MEMBERS);
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDay, setSelectedDay] = useState(null);   // date string for DayPanel
+  const [showModal, setShowModal] = useState(false);
+  const [showMembers, setShowMembers] = useState(false);
+  const [editingEvent, setEditingEvent] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, "config", "miembros"), (snap) => {
+      if (snap.exists()) setMembers(snap.data().lista || DEFAULT_MEMBERS);
+      else setDoc(doc(db, "config", "miembros"), { lista: DEFAULT_MEMBERS });
     });
-  });
-  return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
-}
+    return unsub;
+  }, []);
 
-export default function EventList({ currentDate, events, members, onEdit, onDelete }) {
-  const today = new Date().toISOString().split("T")[0];
-  // Show events for current month and beyond, plus today if past month shown
-  const upcoming = events.filter(e => e.fecha >= today);
-  const past = events.filter(e => e.fecha < today);
+  useEffect(() => {
+    const q = query(collection(db, "eventos"), orderBy("fecha", "asc"));
+    const unsub = onSnapshot(q, (snapshot) => {
+      setEvents(snapshot.docs.map((d) => ({ id: d.id, ...d.data() })));
+      setLoading(false);
+    });
+    return unsub;
+  }, []);
 
-  const getMember = (id) => (members || []).find(m => m.id === id) || { name: "Todos", color: "#c8956c" };
-  const getCat = (id) => CATEGORIES.find(c => c.id === id) || CATEGORIES[7];
-
-  const renderEvent = (ev) => {
-    const member = getMember(ev.miembro);
-    const cat = getCat(ev.categoria);
-    const timeStr = formatTime(ev.hora, ev.horaFin);
-
-    return (
-      <div
-        key={ev.id}
-        className="event-card"
-        style={{ borderLeftColor: member.color }}
-        onClick={() => onEdit(ev)}
-      >
-        <div className="event-card-left">
-          {timeStr ? (
-            <div className="event-card-time-block">
-              <span className="event-time-start">{ev.hora}</span>
-              {ev.horaFin && <span className="event-time-end">{ev.horaFin}</span>}
-            </div>
-          ) : (
-            <div className="event-card-time-block">
-              <span className="event-time-allday">Todo el día</span>
-            </div>
-          )}
-        </div>
-
-        <div className="event-card-divider" style={{ background: member.color }} />
-
-        <div className="event-card-body">
-          <div className="event-card-title">{cat.icon} {ev.titulo}</div>
-          <div className="event-card-meta">
-            {ev.lugar && <span className="event-meta-item">📍 {ev.lugar}</span>}
-            <span className="event-meta-item" style={{ color: member.color, fontWeight: 700 }}>{member.name}</span>
-            <span className="event-meta-item">{cat.label}</span>
-          </div>
-          {ev.descripcion && <div className="event-card-desc">{ev.descripcion}</div>}
-        </div>
-
-        <div className="event-card-actions">
-          <button className="btn-action edit" onClick={e => { e.stopPropagation(); onEdit(ev); }} title="Editar">✏️</button>
-          <button className="btn-action delete" onClick={e => { e.stopPropagation(); onDelete(ev.id); }} title="Eliminar">🗑</button>
-        </div>
-      </div>
-    );
+  // Clic en día → abre DayPanel
+  const handleDayClick = (date) => {
+    setSelectedDay(date);
   };
 
-  return (
-    <div className="event-list-section">
-      <div className="event-list-header">
-        <span>Próximos eventos</span>
-      </div>
+  // Desde DayPanel → añadir evento con fecha prefijada
+  const handleAddFromDay = (date) => {
+    setSelectedDay(null);
+    setEditingEvent(null);
+    setShowModal(true);
+    // Store date for modal
+    setEditingEvent({ _prefillDate: date });
+  };
 
-      {upcoming.length === 0 ? (
-        <div className="event-list-empty">
-          <div className="empty-icon">🗓</div>
-          <p>No hay eventos próximos</p>
-          <p className="empty-sub">Pulsa "+ Evento" o toca un día para añadir uno</p>
+  // Desde DayPanel o lista → editar evento
+  const handleEditEvent = (event) => {
+    setSelectedDay(null);
+    setEditingEvent(event);
+    setShowModal(true);
+  };
+
+  // Botón "+ Evento" del header → hoy por defecto
+  const handleAddEvent = () => {
+    setEditingEvent(null);
+    setShowModal(true);
+  };
+
+  const handleSaveEvent = async (eventData) => {
+    if (editingEvent && editingEvent.id) {
+      await updateDoc(doc(db, "eventos", editingEvent.id), eventData);
+    } else {
+      await addDoc(collection(db, "eventos"), eventData);
+    }
+    setShowModal(false);
+    setEditingEvent(null);
+  };
+
+  const handleDeleteEvent = async (eventId) => {
+    if (confirm("¿Eliminar este evento?")) {
+      await deleteDoc(doc(db, "eventos", eventId));
+      setSelectedDay(null);
+    }
+  };
+
+  const handleSaveMembers = async (newMembers) => {
+    await setDoc(doc(db, "config", "miembros"), { lista: newMembers });
+    setShowMembers(false);
+  };
+
+  // Events for selected day
+  const dayEvents = selectedDay
+    ? events.filter(e => e.fecha === selectedDay)
+    : [];
+
+  // Prefill date: either from editing._prefillDate or today
+  const modalDate = editingEvent?.id
+    ? editingEvent.fecha
+    : editingEvent?._prefillDate || new Date().toISOString().split("T")[0];
+
+  return (
+    <div className="app">
+      <InstallBanner />
+      <Header
+        currentDate={currentDate}
+        setCurrentDate={setCurrentDate}
+        members={members}
+        onAddEvent={handleAddEvent}
+        onOpenMembers={() => setShowMembers(true)}
+      />
+
+      {loading ? (
+        <div className="loading">
+          <div className="loading-spinner" />
+          <p>Cargando calendario...</p>
         </div>
       ) : (
-        <div className="event-list-wrap">
-          {groupByDate(upcoming).map(([date, evs]) => (
-            <div key={date} className="event-date-group">
-              <div className="event-date-label">
-                <span className="event-date-text">{formatDateLabel(date)}</span>
-                <span className="event-date-count">{evs.length} evento{evs.length > 1 ? "s" : ""}</span>
-              </div>
-              {evs.map(renderEvent)}
-            </div>
-          ))}
-        </div>
+        <main className="main-content">
+          <CalendarView
+            currentDate={currentDate}
+            setCurrentDate={setCurrentDate}
+            events={events}
+            members={members}
+            onDayClick={handleDayClick}
+            onEventClick={handleEditEvent}
+          />
+          <EventList
+            currentDate={currentDate}
+            events={events}
+            members={members}
+            onEdit={handleEditEvent}
+            onDelete={handleDeleteEvent}
+          />
+        </main>
       )}
 
-      {past.length > 0 && (
-        <>
-          <div className="event-list-header event-list-header-past">Eventos pasados</div>
-          <div className="event-list-wrap">
-            {groupByDate([...past].reverse()).map(([date, evs]) => (
-              <div key={date} className="event-date-group past-group">
-                <div className="event-date-label">
-                  <span className="event-date-text">{formatDateLabel(date)}</span>
-                </div>
-                {evs.map(ev => (
-                  <div key={ev.id} style={{ opacity: 0.55 }}>{renderEvent(ev)}</div>
-                ))}
-              </div>
-            ))}
-          </div>
-        </>
+      {/* Day panel */}
+      {selectedDay && (
+        <DayPanel
+          date={selectedDay}
+          events={dayEvents}
+          members={members}
+          onClose={() => setSelectedDay(null)}
+          onAdd={handleAddFromDay}
+          onEdit={handleEditEvent}
+          onDelete={handleDeleteEvent}
+        />
+      )}
+
+      {/* Event form modal */}
+      {showModal && (
+        <EventModal
+          date={modalDate}
+          event={editingEvent?.id ? editingEvent : null}
+          members={members}
+          onSave={handleSaveEvent}
+          onClose={() => { setShowModal(false); setEditingEvent(null); }}
+          onDelete={editingEvent?.id
+            ? () => handleDeleteEvent(editingEvent.id).then(() => setShowModal(false))
+            : null}
+        />
+      )}
+
+      {showMembers && (
+        <MembersModal
+          members={members}
+          onSave={handleSaveMembers}
+          onClose={() => setShowMembers(false)}
+        />
       )}
     </div>
   );
 }
+
