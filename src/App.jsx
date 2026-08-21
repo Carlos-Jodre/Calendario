@@ -1,9 +1,6 @@
 import { useState, useEffect } from "react";
 import { initializeApp } from "firebase/app";
-import {
-  getFirestore, collection, onSnapshot, addDoc,
-  deleteDoc, updateDoc, doc, query, orderBy, setDoc,
-} from "firebase/firestore";
+import { getFirestore, collection, onSnapshot, addDoc, deleteDoc, updateDoc, doc, query, orderBy, setDoc } from "firebase/firestore";
 import CalendarView from "./components/CalendarView";
 import EventModal from "./components/EventModal";
 import EventList from "./components/EventList";
@@ -13,39 +10,13 @@ import InstallBanner from "./components/InstallBanner";
 import DayPanel from "./components/DayPanel";
 import "./App.css";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyDfq4oVaFxhGaqipx52itBxUARcajJhHfA",
-  authDomain: "tareas-casa-11c7b.firebaseapp.com",
-  projectId: "tareas-casa-11c7b",
-  storageBucket: "tareas-casa-11c7b.firebasestorage.app",
-  messagingSenderId: "956111451974",
-  appId: "1:956111451974:web:aab85979e536d5770e1747",
-};
+const firebaseConfig = { apiKey: "AIzaSyDfq4oVaFxhGaqipx52itBxUARcajJhHfA", authDomain: "tareas-casa-11c7b.firebaseapp.com", projectId: "tareas-casa-11c7b", storageBucket: "tareas-casa-11c7b.firebasestorage.app", messagingSenderId: "956111451974", appId: "1:956111451974:web:aab85979e536d5770e1747" };
 
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
-
-export const DEFAULT_MEMBERS = [
-  { id: "todos", name: "Todos",  color: "#c8956c" },
-  { id: "m1",   name: "Carlos", color: "#5b8fb9" },
-  { id: "m2",   name: "Pareja", color: "#c77daa" },
-];
-export const MEMBER_COLORS = [
-  "#5b8fb9","#c77daa","#6ab187","#e8a838",
-  "#c8956c","#7b68ee","#e07b7b","#4db6ac",
-  "#ff8a65","#a1887f","#78909c","#66bb6a",
-];
-
-export const CATEGORIES = [
-  { id: "reunion", label: "Reunión",  icon: "👥" },
-  { id: "medico",  label: "Médico",   icon: "🏥" },
-  { id: "colegio", label: "Colegio",  icon: "🎒" },
-  { id: "deporte", label: "Deporte",  icon: "⚽" },
-  { id: "ocio",    label: "Ocio",     icon: "🎉" },
-  { id: "viaje",   label: "Viaje",    icon: "✈️" },
-  { id: "trabajo", label: "Trabajo",  icon: "💼" },
-  { id: "otro",    label: "Otro",     icon: "📌" },
-];
+export const DEFAULT_MEMBERS = [{ id: "todos", name: "Todos", color: "#c8956c" }, { id: "m1", name: "Carlos", color: "#5b8fb9" }, { id: "m2", name: "Pareja", color: "#c77daa" }];
+export const MEMBER_COLORS = ["#5b8fb9","#c77daa","#6ab187","#e8a838","#c8956c","#7b68ee","#e07b7b","#4db6ac","#ff8a65","#a1887f","#78909c","#66bb6a"];
+export const CATEGORIES = [{ id: "reunion", label: "Reuni\u00f3n", icon: "\ud83d\udc65" }, { id: "medico", label: "M\u00e9dico", icon: "\ud83c\udfe5" }, { id: "colegio", label: "Colegio", icon: "\ud83c\udf92" }, { id: "deporte", label: "Deporte", icon: "\u26bd" }, { id: "ocio", label: "Ocio", icon: "\ud83c\udf89" }, { id: "viaje", label: "Viaje", icon: "\u2708\ufe0f" }, { id: "trabajo", label: "Trabajo", icon: "\ud83d\udcbc" }, { id: "otro", label: "Otro", icon: "\ud83d\udccc" }];
 
 export default function App() {
   const [events, setEvents] = useState([]);
@@ -74,42 +45,20 @@ export default function App() {
     return unsub;
   }, []);
 
-  const handleDayClick = (date) => {
-    setSelectedDay(date);
-  };
-
-  const handleAddFromDay = (date) => {
-    setSelectedDay(null);
-    setEditingEvent({ _prefillDate: date });
-    setShowModal(true);
-  };
-
-  const handleEditEvent = (event) => {
-    setSelectedDay(null);
-    setEditingEvent(event);
-    setShowModal(true);
-  };
-
-  const handleAddEvent = () => {
-    setEditingEvent(null);
-    setShowModal(true);
-  };
+  const handleDayClick = (date) => { setSelectedDay(date); };
+  const handleAddFromDay = (date) => { setSelectedDay(null); setEditingEvent({ _prefillDate: date }); setShowModal(true); };
+  const handleEditEvent = (event) => { setSelectedDay(null); setEditingEvent(event); setShowModal(true); };
+  const handleAddEvent = () => { setEditingEvent(null); setShowModal(true); };
 
   const handleSaveEvent = async (eventData) => {
-    if (editingEvent && editingEvent.id) {
-      await updateDoc(doc(db, "eventos", editingEvent.id), eventData);
-    } else {
-      await addDoc(collection(db, "eventos"), eventData);
-    }
+    if (editingEvent && editingEvent.id) await updateDoc(doc(db, "eventos", editingEvent.id), eventData);
+    else await addDoc(collection(db, "eventos"), eventData);
     setShowModal(false);
     setEditingEvent(null);
   };
 
   const handleDeleteEvent = async (eventId) => {
-    if (confirm("¿Eliminar este evento?")) {
-      await deleteDoc(doc(db, "eventos", eventId));
-      setSelectedDay(null);
-    }
+    if (confirm("Eliminar este evento?")) { await deleteDoc(doc(db, "eventos", eventId)); setSelectedDay(null); }
   };
 
   const handleSaveMembers = async (newMembers) => {
@@ -117,82 +66,24 @@ export default function App() {
     setShowMembers(false);
   };
 
-  const dayEvents = selectedDay
-    ? events.filter(e => e.fecha === selectedDay)
-    : [];
-
-  const modalDate = editingEvent?.id
-    ? editingEvent.fecha
-    : editingEvent?._prefillDate || new Date().toISOString().split("T")[0];
+  const dayEvents = selectedDay ? events.filter(e => e.fecha === selectedDay) : [];
+  const modalDate = editingEvent?.id ? editingEvent.fecha : editingEvent?._prefillDate || new Date().toISOString().split("T")[0];
 
   return (
     <div className="app">
       <InstallBanner />
-      <Header
-        currentDate={currentDate}
-        setCurrentDate={setCurrentDate}
-        members={members}
-        onAddEvent={handleAddEvent}
-        onOpenMembers={() => setShowMembers(true)}
-      />
-
+      <Header currentDate={currentDate} setCurrentDate={setCurrentDate} members={members} onAddEvent={handleAddEvent} onOpenMembers={() => setShowMembers(true)} />
       {loading ? (
-        <div className="loading">
-          <div className="loading-spinner" />
-          <p>Cargando calendario...</p>
-        </div>
+        <div className="loading"><div className="loading-spinner" /><p>Cargando calendario...</p></div>
       ) : (
         <main className="main-content">
-          <CalendarView
-            currentDate={currentDate}
-            setCurrentDate={setCurrentDate}
-            events={events}
-            members={members}
-            onDayClick={handleDayClick}
-            onEventClick={handleEditEvent}
-          />
-          <EventList
-            currentDate={currentDate}
-            events={events}
-            members={members}
-            onEdit={handleEditEvent}
-            onDelete={handleDeleteEvent}
-          />
+          <CalendarView currentDate={currentDate} setCurrentDate={setCurrentDate} events={events} members={members} onDayClick={handleDayClick} onEventClick={handleEditEvent} />
+          <EventList currentDate={currentDate} events={events} members={members} onEdit={handleEditEvent} onDelete={handleDeleteEvent} />
         </main>
       )}
-
-      {selectedDay && (
-        <DayPanel
-          date={selectedDay}
-          events={dayEvents}
-          members={members}
-          onClose={() => setSelectedDay(null)}
-          onAdd={handleAddFromDay}
-          onEdit={handleEditEvent}
-          onDelete={handleDeleteEvent}
-        />
-      )}
-
-      {showModal && (
-        <EventModal
-          date={modalDate}
-          event={editingEvent?.id ? editingEvent : null}
-          members={members}
-          onSave={handleSaveEvent}
-          onClose={() => { setShowModal(false); setEditingEvent(null); }}
-          onDelete={editingEvent?.id
-            ? () => handleDeleteEvent(editingEvent.id).then(() => setShowModal(false))
-            : null}
-        />
-      )}
-
-      {showMembers && (
-        <MembersModal
-          members={members}
-          onSave={handleSaveMembers}
-          onClose={() => setShowMembers(false)}
-        />
-      )}
+      {selectedDay && <DayPanel date={selectedDay} events={dayEvents} members={members} onClose={() => setSelectedDay(null)} onAdd={handleAddFromDay} onEdit={handleEditEvent} onDelete={handleDeleteEvent} />}
+      {showModal && <EventModal date={modalDate} event={editingEvent?.id ? editingEvent : null} members={members} onSave={handleSaveEvent} onClose={() => { setShowModal(false); setEditingEvent(null); }} onDelete={editingEvent?.id ? () => handleDeleteEvent(editingEvent.id).then(() => setShowModal(false)) : null} />}
+      {showMembers && <MembersModal members={members} onSave={handleSaveMembers} onClose={() => setShowMembers(false)} />}
     </div>
   );
 }
