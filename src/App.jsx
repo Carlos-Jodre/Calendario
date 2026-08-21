@@ -9,6 +9,8 @@ import EventModal from "./components/EventModal";
 import EventList from "./components/EventList";
 import Header from "./components/Header";
 import MembersModal from "./components/MembersModal";
+import InstallBanner from "./components/InstallBanner";
+import DayPanel from "./components/DayPanel";
 import "./App.css";
 
 const firebaseConfig = {
@@ -24,9 +26,9 @@ const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 
 export const DEFAULT_MEMBERS = [
-  { id: "todos",  name: "Todos",  color: "#c8956c" },
-  { id: "m1",    name: "Carlos", color: "#5b8fb9" },
-  { id: "m2",    name: "Pareja", color: "#c77daa" },
+  { id: "todos", name: "Todos",  color: "#c8956c" },
+  { id: "m1",   name: "Carlos", color: "#5b8fb9" },
+  { id: "m2",   name: "Pareja", color: "#c77daa" },
 ];
 
 export const MEMBER_COLORS = [
@@ -50,7 +52,7 @@ export default function App() {
   const [events, setEvents] = useState([]);
   const [members, setMembers] = useState(DEFAULT_MEMBERS);
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState(null);
+  const [selectedDay, setSelectedDay] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [showMembers, setShowMembers] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
@@ -73,27 +75,42 @@ export default function App() {
     return unsub;
   }, []);
 
-  const handleAddEvent = (date) => {
-    setSelectedDate(date);
-    setEditingEvent(null);
+  const handleDayClick = (date) => {
+    setSelectedDay(date);
+  };
+
+  const handleAddFromDay = (date) => {
+    setSelectedDay(null);
+    setEditingEvent({ _prefillDate: date });
     setShowModal(true);
   };
 
   const handleEditEvent = (event) => {
+    setSelectedDay(null);
     setEditingEvent(event);
-    setSelectedDate(event.fecha);
+    setShowModal(true);
+  };
+
+  const handleAddEvent = () => {
+    setEditingEvent(null);
     setShowModal(true);
   };
 
   const handleSaveEvent = async (eventData) => {
-    if (editingEvent) await updateDoc(doc(db, "eventos", editingEvent.id), eventData);
-    else await addDoc(collection(db, "eventos"), eventData);
+    if (editingEvent && editingEvent.id) {
+      await updateDoc(doc(db, "eventos", editingEvent.id), eventData);
+    } else {
+      await addDoc(collection(db, "eventos"), eventData);
+    }
     setShowModal(false);
     setEditingEvent(null);
   };
 
   const handleDeleteEvent = async (eventId) => {
-    if (confirm("¿Eliminar este evento?")) await deleteDoc(doc(db, "eventos", eventId));
+    if (confirm("¿Eliminar este evento?")) {
+      await deleteDoc(doc(db, "eventos", eventId));
+      setSelectedDay(null);
+    }
   };
 
   const handleSaveMembers = async (newMembers) => {
@@ -101,13 +118,22 @@ export default function App() {
     setShowMembers(false);
   };
 
+  const dayEvents = selectedDay
+    ? events.filter(e => e.fecha === selectedDay)
+    : [];
+
+  const modalDate = editingEvent?.id
+    ? editingEvent.fecha
+    : editingEvent?._prefillDate || new Date().toISOString().split("T")[0];
+
   return (
     <div className="app">
+      <InstallBanner />
       <Header
         currentDate={currentDate}
         setCurrentDate={setCurrentDate}
         members={members}
-        onAddEvent={() => handleAddEvent(new Date().toISOString().split("T")[0])}
+        onAddEvent={handleAddEvent}
         onOpenMembers={() => setShowMembers(true)}
       />
 
@@ -123,7 +149,7 @@ export default function App() {
             setCurrentDate={setCurrentDate}
             events={events}
             members={members}
-            onDayClick={handleAddEvent}
+            onDayClick={handleDayClick}
             onEventClick={handleEditEvent}
           />
           <EventList
@@ -136,14 +162,28 @@ export default function App() {
         </main>
       )}
 
+      {selectedDay && (
+        <DayPanel
+          date={selectedDay}
+          events={dayEvents}
+          members={members}
+          onClose={() => setSelectedDay(null)}
+          onAdd={handleAddFromDay}
+          onEdit={handleEditEvent}
+          onDelete={handleDeleteEvent}
+        />
+      )}
+
       {showModal && (
         <EventModal
-          date={selectedDate}
-          event={editingEvent}
+          date={modalDate}
+          event={editingEvent?.id ? editingEvent : null}
           members={members}
           onSave={handleSaveEvent}
           onClose={() => { setShowModal(false); setEditingEvent(null); }}
-          onDelete={editingEvent ? () => handleDeleteEvent(editingEvent.id).then(() => setShowModal(false)) : null}
+          onDelete={editingEvent?.id
+            ? () => handleDeleteEvent(editingEvent.id).then(() => setShowModal(false))
+            : null}
         />
       )}
 
